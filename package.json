@@ -15,6 +15,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/app-root-path": "^1.2.4",
+    "@types/cli-progress": "^3.8.0",
     "@types/node": "^14.14.8",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
@@ -39,6 +40,8 @@
   "dependencies": {
     "@supercharge/promise-pool": "^1.6.0",
     "app-root-path": "^3.0.0",
+    "chalk": "^4.1.0",
+    "cli-progress": "^3.8.2",
     "package-json": "^6.5.0",
     "read-package-json": "^3.0.0"
   }
