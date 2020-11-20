@@ -2,9 +2,13 @@
   "name": "packages-whats-new",
   "version": "0.0.1",
   "description": "What's new in your NPM packages",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "packages-whats-new": "./dist/index.js"
+  },
   "scripts": {
     "start": "ts-node --project ./tsconfig.json ./src/index.ts 1w",
+    "build": "tsc --project ./tsconfig.json",
     "test": "test",
     "prettier": "prettier --write \"./src/{,!(node_modules|dist|build|coverage)/**/}*.{js,ts,json}\"",
     "pre-commit": "lint-staged",
@@ -14,9 +18,11 @@
   "author": "AlexanderS",
   "license": "MIT",
   "devDependencies": {
-    "@types/app-root-path": "^1.2.4",
+    "@types/clear": "^0.1.0",
     "@types/cli-progress": "^3.8.0",
+    "@types/figlet": "^1.2.1",
     "@types/node": "^14.14.8",
+    "@types/yargs": "^15.0.10",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "eslint": "^7.13.0",
@@ -39,10 +45,12 @@
   },
   "dependencies": {
     "@supercharge/promise-pool": "^1.6.0",
-    "app-root-path": "^3.0.0",
     "chalk": "^4.1.0",
+    "clear": "^0.1.0",
     "cli-progress": "^3.8.2",
+    "figlet": "^1.5.0",
     "package-json": "^6.5.0",
-    "read-package-json": "^3.0.0"
+    "read-package-json": "^3.0.0",
+    "yargs": "^16.1.1"
   }
 }

@@ -1,8 +1,12 @@
+#!/usr/bin/env node
+
 import PromisePool from '@supercharge/promise-pool';
-import appRoot from 'app-root-path';
-import cliProgress from 'cli-progress';
-import path from 'path';
 import chalk from 'chalk';
+import clear from 'clear';
+import cliProgress from 'cli-progress';
+import figlet from 'figlet';
+import path from 'path';
+import yargs from 'yargs/yargs';
 import dateDiffInDays from './dateDiffInDays';
 import getInterval from './getInterval';
 import latestVersionAsync from './latestVersionAsync';
@@ -15,17 +19,41 @@ type ModuleInfo = ReadJsonResult & {
   latestDate: Date;
 };
 
+clear();
+console.log(chalk.yellow(figlet.textSync('packages-whats-new', { horizontalLayout: 'full' })));
+
+const { directory, concurrency, interval: intervalStr } = yargs(process.argv.slice(2)).options({
+  concurrency: {
+    type: 'number',
+    alias: 'c',
+    default: 10,
+    description: 'The number of concurrent requests',
+  },
+  directory: {
+    type: 'string',
+    alias: 'd',
+    description: 'The project directory',
+  },
+  interval: {
+    type: 'string',
+    alias: 'i',
+    default: '1w',
+    description: 'The interval',
+  },
+}).argv;
+
 const today = new Date();
-const interval = getInterval(process.argv[2] ?? '1m');
+const interval = getInterval(intervalStr);
+const projectDir = directory || process.cwd();
 
 async function walk(): Promise<string[]> {
-  console.log(chalk.magenta('Walking through node_modules folder:'));
+  console.log(chalk.magenta('Walking through node_modules folder'));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-  // start the progress bar with a total value of 200 and start value of 0
+  // start the progress bar with a total value of 100 and start value of 0
   bar.start(100, 0);
-  const fileList = walkSync(path.join(appRoot.path, 'node_modules'));
+  const fileList = walkSync(path.join(projectDir, 'node_modules'));
   const allPackages = new Set<string>();
   fileList.forEach(file => allPackages.add(file));
   // update the current value in your application..
@@ -38,7 +66,7 @@ async function walk(): Promise<string[]> {
 }
 
 async function collect(data: string[]): Promise<ModuleInfo[]> {
-  console.log(chalk.magenta('Collecting package information:'));
+  console.log(chalk.magenta('Collecting packages information'));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
@@ -46,7 +74,7 @@ async function collect(data: string[]): Promise<ModuleInfo[]> {
   bar.start(data.length, 0);
 
   const errors: Array<[string, Error]> = [];
-  const { results } = await PromisePool.withConcurrency(10)
+  const { results } = await PromisePool.withConcurrency(concurrency)
     .for(data)
     .handleError(async (error: Error, pathName: string) => {
       bar.increment(1);
@@ -80,7 +108,7 @@ async function collect(data: string[]): Promise<ModuleInfo[]> {
 
 async function bootstrap() {
   const data = await walk();
-  const results = await collect(data.slice(0, 100));
+  const results = await collect(data);
 
   console.table(results.filter(x => dateDiffInDays(x.latestDate, today) < interval));
 }
