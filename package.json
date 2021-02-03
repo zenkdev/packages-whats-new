@@ -1,6 +1,6 @@
 {
   "name": "packages-whats-new",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "What's new in your NPM packages",
   "main": "dist/index.js",
   "bin": {
