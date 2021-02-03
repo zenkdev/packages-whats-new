@@ -46,17 +46,16 @@ const { directory, concurrency, interval: intervalStr } = yargs(process.argv.sli
 
 const today = new Date();
 const interval = getInterval(intervalStr);
-const projectDir = directory || process.cwd();
+const projectDir = path.join(directory || process.cwd(), 'node_modules');
 
 async function walk(): Promise<string[]> {
-  const dir = path.join(projectDir, 'node_modules');
-  logger.log(chalk.magenta(`Walking through ${dir} folder`));
+  logger.log(chalk.magenta(`Walking through ${projectDir} folder`));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   // start the progress bar with a total value of 100 and start value of 0
   bar.start(100, 0);
-  const fileList = walkSync(dir);
+  const fileList = walkSync(projectDir);
   const allPackages = new Set<string>();
   fileList.forEach(file => allPackages.add(file));
   // update the current value in your application..
