@@ -19,8 +19,10 @@ type ModuleInfo = ReadJsonResult & {
   latestDate: Date;
 };
 
+const logger = console;
+
 clear();
-console.log(chalk.yellow(figlet.textSync('packages-whats-new', { horizontalLayout: 'full' })));
+logger.log(chalk.yellow(figlet.textSync('packages-whats-new', { horizontalLayout: 'full' })));
 
 const { directory, concurrency, interval: intervalStr } = yargs(process.argv.slice(2)).options({
   concurrency: {
@@ -47,13 +49,14 @@ const interval = getInterval(intervalStr);
 const projectDir = directory || process.cwd();
 
 async function walk(): Promise<string[]> {
-  console.log(chalk.magenta('Walking through node_modules folder'));
+  const dir = path.join(projectDir, 'node_modules');
+  logger.log(chalk.magenta(`Walking through ${dir} folder`));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   // start the progress bar with a total value of 100 and start value of 0
   bar.start(100, 0);
-  const fileList = walkSync(path.join(projectDir, 'node_modules'));
+  const fileList = walkSync(dir);
   const allPackages = new Set<string>();
   fileList.forEach(file => allPackages.add(file));
   // update the current value in your application..
@@ -66,7 +69,7 @@ async function walk(): Promise<string[]> {
 }
 
 async function collect(data: string[]): Promise<ModuleInfo[]> {
-  console.log(chalk.magenta('Collecting packages information'));
+  logger.log(chalk.magenta('Collecting packages information'));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
@@ -100,7 +103,7 @@ async function collect(data: string[]): Promise<ModuleInfo[]> {
   bar.stop();
 
   if (errors.length) {
-    errors.forEach(([pathName, error]) => console.error(chalk.red(`${pathName} => ${error.message}`)));
+    errors.forEach(([pathName, error]) => logger.error(chalk.red(`${pathName} => ${error.message}`)));
   }
 
   return results;
@@ -110,7 +113,7 @@ async function bootstrap() {
   const data = await walk();
   const results = await collect(data);
 
-  console.table(results.filter(x => dateDiffInDays(x.latestDate, today) < interval));
+  logger.table(results.filter(x => dateDiffInDays(x.latestDate, today) < interval));
 }
 
 bootstrap()
@@ -118,6 +121,6 @@ bootstrap()
     process.exit(0);
   })
   .catch((reason: Error) => {
-    console.error('Error:', reason);
+    logger.error('Error:', reason);
     process.exit(1);
   });

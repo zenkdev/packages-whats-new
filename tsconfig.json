@@ -14,7 +14,11 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "read-package-json": ["typings/read-package-json"]
+    }
   },
   "include": ["./typings/*.d.ts", "src"]
 }
