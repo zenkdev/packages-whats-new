@@ -18,7 +18,7 @@
   "author": "AlexanderS",
   "license": "MIT",
   "devDependencies": {
-    "@types/clear": "^0.1.1",
+    "@types/clear": "0.1.2",
     "@types/cli-progress": "^3.8.0",
     "@types/figlet": "^1.2.1",
     "@types/node": "^14.14.22",
