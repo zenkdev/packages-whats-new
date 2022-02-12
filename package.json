@@ -22,7 +22,7 @@
     "@types/cli-progress": "3.9.2",
     "@types/figlet": "1.5.4",
     "@types/node": "16.11.24",
-    "@types/yargs": "15.0.14",
+    "@types/yargs": "17.0.8",
     "@typescript-eslint/eslint-plugin": "4.33.0",
     "@typescript-eslint/parser": "4.33.0",
     "eslint": "8.9.0",
@@ -51,6 +51,6 @@
     "figlet": "^1.5.0",
     "package-json": "^6.5.0",
     "read-package-json": "^4.0.0",
-    "yargs": "^16.2.0"
+    "yargs": "^17.0.0"
   }
 }
