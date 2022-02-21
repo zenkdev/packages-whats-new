@@ -24,7 +24,11 @@ const logger = console;
 clear();
 logger.log(chalk.yellow(figlet.textSync('packages-whats-new', { horizontalLayout: 'full' })));
 
-const { directory, concurrency, interval: intervalStr } = yargs(process.argv.slice(2)).options({
+const {
+  directory,
+  concurrency,
+  interval: intervalStr,
+} = yargs(process.argv.slice(2)).options({
   concurrency: {
     type: 'number',
     alias: 'c',
@@ -42,7 +46,7 @@ const { directory, concurrency, interval: intervalStr } = yargs(process.argv.sli
     default: '1w',
     description: 'The interval',
   },
-}).argv;
+}).argv as any;
 
 const today = new Date();
 const interval = getInterval(intervalStr);
@@ -82,21 +86,19 @@ async function collect(data: string[]): Promise<ModuleInfo[]> {
       bar.increment(1);
       errors.push([pathName, error]);
     })
-    .process(
-      async (pathName: string): Promise<ModuleInfo> => {
-        const { name, version } = await readJsonAsync(pathName);
-        const [latestVersion, latestDate] = await latestVersionAsync(name);
-        // update the current value in your application..
-        bar.increment(1);
-        return {
-          pathName,
-          name,
-          version,
-          latestVersion,
-          latestDate,
-        } as ModuleInfo;
-      },
-    );
+    .process(async (pathName: string): Promise<ModuleInfo> => {
+      const { name, version } = await readJsonAsync(pathName);
+      const [latestVersion, latestDate] = await latestVersionAsync(name);
+      // update the current value in your application..
+      bar.increment(1);
+      return {
+        pathName,
+        name,
+        version,
+        latestVersion,
+        latestDate,
+      } as ModuleInfo;
+    });
 
   // stop the progress bar
   bar.stop();

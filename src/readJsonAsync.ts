@@ -7,13 +7,13 @@ export type ReadJsonResult = {
 };
 
 export default function readJsonAsync(pathName: string): Promise<ReadJsonResult> {
-  return new Promise<ReadJsonResult>((resolve, reject) =>
+  return new Promise<ReadJsonResult>((resolve, reject) => {
     readJson(pathName, false, (er: Error | undefined, data: ReadJsonResult) => {
       if (er) {
         reject(er);
       } else {
         resolve(data);
       }
-    }),
-  );
+    });
+  });
 }
