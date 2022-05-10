@@ -21,7 +21,7 @@
     "@types/clear": "0.1.2",
     "@types/cli-progress": "3.9.2",
     "@types/figlet": "1.5.4",
-    "@types/node": "16.11.26",
+    "@types/node": "16.11.34",
     "@types/yargs": "17.0.10",
     "@typescript-eslint/eslint-plugin": "5.17.0",
     "@typescript-eslint/parser": "5.17.0",
