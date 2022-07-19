@@ -5,19 +5,26 @@ import chalk from 'chalk';
 import clear from 'clear';
 import cliProgress from 'cli-progress';
 import figlet from 'figlet';
-import path from 'path';
 import yargs from 'yargs/yargs';
 import dateDiffInDays from './dateDiffInDays';
 import getInterval from './getInterval';
-import latestVersionAsync from './latestVersionAsync';
-import readJsonAsync, { ReadJsonResult } from './readJsonAsync';
-import walkSync from './walkSync';
+import readPackages from './readPackages';
+import getLatestVersion from './getLatestVersion';
+import { Package } from './types';
 
-type ModuleInfo = ReadJsonResult & {
-  pathName: string;
+interface Args {
+  directory?: string;
+  concurrency: number;
+  interval: string;
+  to?: string;
+}
+
+interface ModuleInfo {
+  name: string;
+  version: string;
   latestVersion: string;
   latestDate: Date;
-};
+}
 
 const logger = console;
 
@@ -28,6 +35,7 @@ const {
   directory,
   concurrency,
   interval: intervalStr,
+  to: toStr,
 } = yargs(process.argv.slice(2)).options({
   concurrency: {
     type: 'number',
@@ -46,53 +54,42 @@ const {
     default: '1w',
     description: 'The interval',
   },
-}).argv as any;
+  to: {
+    type: 'string',
+    description: 'Version date to',
+  },
+}).argv as Args;
 
 const today = new Date();
 const interval = getInterval(intervalStr);
-const projectDir = path.join(directory || process.cwd(), 'node_modules');
-
-async function walk(): Promise<string[]> {
-  logger.log(chalk.magenta(`Walking through ${projectDir} folder`));
-
-  // create a new progress bar instance and use shades_classic theme
-  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-  // start the progress bar with a total value of 100 and start value of 0
-  bar.start(100, 0);
-  const fileList = walkSync(projectDir);
-  const allPackages = new Set<string>();
-  fileList.forEach(file => allPackages.add(file));
-  // update the current value in your application..
-  bar.update(100);
-
-  // stop the progress bar
-  bar.stop();
-
-  return Array.from(allPackages);
+const projectDir = directory || process.cwd();
+let to: Date | undefined;
+try {
+  to = toStr ? new Date(toStr) : undefined;
+} catch (e) {
+  to = undefined;
 }
 
-async function collect(data: string[]): Promise<ModuleInfo[]> {
+async function collect(pkgs: Package[]): Promise<ModuleInfo[]> {
   logger.log(chalk.magenta('Collecting packages information'));
 
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   // start the progress bar with a total value of 200 and start value of 0
-  bar.start(data.length, 0);
+  bar.start(pkgs.length, 0);
 
   const errors: Array<[string, Error]> = [];
   const { results } = await PromisePool.withConcurrency(concurrency)
-    .for(data)
-    .handleError(async (error: Error, pathName: string) => {
+    .for(pkgs)
+    .handleError(async (error: Error, { name }: Package) => {
       bar.increment(1);
-      errors.push([pathName, error]);
+      errors.push([name, error]);
     })
-    .process(async (pathName: string): Promise<ModuleInfo> => {
-      const { name, version } = await readJsonAsync(pathName);
-      const [latestVersion, latestDate] = await latestVersionAsync(name);
+    .process(async ({ name, version }: Package): Promise<ModuleInfo> => {
+      const { version: latestVersion, date: latestDate } = await getLatestVersion(name, { to });
       // update the current value in your application..
       bar.increment(1);
       return {
-        pathName,
         name,
         version,
         latestVersion,
@@ -111,10 +108,11 @@ async function collect(data: string[]): Promise<ModuleInfo[]> {
 }
 
 async function bootstrap() {
-  const data = await walk();
-  const results = await collect(data);
+  logger.log(chalk.magenta(`Reading packages from ${projectDir}`));
+  const pkgs = await readPackages(projectDir);
+  const results = await collect(pkgs);
 
-  logger.table(results.filter(x => dateDiffInDays(x.latestDate, today) < interval));
+  logger.table(results.filter(x => x.version !== x.latestVersion && dateDiffInDays(x.latestDate, today) < interval));
 }
 
 bootstrap()
