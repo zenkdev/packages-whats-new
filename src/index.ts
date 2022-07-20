@@ -6,25 +6,11 @@ import clear from 'clear';
 import cliProgress from 'cli-progress';
 import figlet from 'figlet';
 import yargs from 'yargs/yargs';
-import dateDiffInDays from './dateDiffInDays';
-import getInterval from './getInterval';
+import fs from 'fs';
 import readPackages from './readPackages';
 import getLatestVersion from './getLatestVersion';
-import { Package } from './types';
-
-interface Args {
-  directory?: string;
-  concurrency: number;
-  interval: string;
-  to?: string;
-}
-
-interface ModuleInfo {
-  name: string;
-  version: string;
-  latestVersion: string;
-  latestDate: Date;
-}
+import { Args, Package, PackageInfo } from './types';
+import parseDate from './parseDate';
 
 const logger = console;
 
@@ -34,7 +20,7 @@ logger.log(chalk.yellow(figlet.textSync('packages-whats-new', { horizontalLayout
 const {
   directory,
   concurrency,
-  interval: intervalStr,
+  from: fromStr,
   to: toStr,
 } = yargs(process.argv.slice(2)).options({
   concurrency: {
@@ -48,31 +34,29 @@ const {
     alias: 'd',
     description: 'The project directory',
   },
-  interval: {
+  from: {
     type: 'string',
-    alias: 'i',
-    default: '1w',
-    description: 'The interval',
+    description: 'Minimum release date, eq: 1y, 2m, 3d or 01/01/2022.',
   },
   to: {
     type: 'string',
-    description: 'Version date to',
+    description: 'Maximum release date, eq: 1y, 2m, 3d or 01/01/2022.',
   },
 }).argv as Args;
 
-const today = new Date();
-const interval = getInterval(intervalStr);
 const projectDir = directory || process.cwd();
-let to: Date | undefined;
-try {
-  to = toStr ? new Date(toStr) : undefined;
-} catch (e) {
-  to = undefined;
+const from = parseDate(fromStr);
+const to = parseDate(toStr);
+
+function checkProjectDirExists(): Promise<boolean> {
+  return new Promise(resolve => {
+    fs.exists(projectDir, exists => {
+      resolve(exists);
+    });
+  });
 }
 
-async function collect(pkgs: Package[]): Promise<ModuleInfo[]> {
-  logger.log(chalk.magenta('Collecting packages information'));
-
+async function collect(pkgs: Package[]): Promise<PackageInfo[]> {
   // create a new progress bar instance and use shades_classic theme
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   // start the progress bar with a total value of 200 and start value of 0
@@ -85,34 +69,39 @@ async function collect(pkgs: Package[]): Promise<ModuleInfo[]> {
       bar.increment(1);
       errors.push([name, error]);
     })
-    .process(async ({ name, version }: Package): Promise<ModuleInfo> => {
-      const { version: latestVersion, date: latestDate } = await getLatestVersion(name, { to });
+    .process(async ({ name, version }: Package): Promise<PackageInfo> => {
+      const { version: latestVersion, time: latestTime } = await getLatestVersion(name, { from, to });
       // update the current value in your application..
       bar.increment(1);
       return {
         name,
         version,
         latestVersion,
-        latestDate,
-      } as ModuleInfo;
+        latestTime,
+      } as PackageInfo;
     });
 
   // stop the progress bar
   bar.stop();
 
   if (errors.length) {
-    errors.forEach(([pathName, error]) => logger.error(chalk.red(`${pathName} => ${error.message}`)));
+    errors.forEach(([packageName, error]) => logger.error(chalk.red(`${packageName} => ${error.message}`)));
   }
 
   return results;
 }
 
 async function bootstrap() {
-  logger.log(chalk.magenta(`Reading packages from ${projectDir}`));
-  const pkgs = await readPackages(projectDir);
+  if (!(await checkProjectDirExists())) {
+    logger.error(chalk.red(`Folder '${projectDir}' not found.`));
+    return;
+  }
+  logger.log(chalk.magenta(`Reading packages from '${projectDir}'...`));
+  const pkgs = await readPackages(projectDir, logger.error);
+  logger.log(chalk.magenta('Collecting packages information...'));
   const results = await collect(pkgs);
 
-  logger.table(results.filter(x => x.version !== x.latestVersion && dateDiffInDays(x.latestDate, today) < interval));
+  logger.table(results.filter(x => x.version !== x.latestVersion));
 }
 
 bootstrap()

@@ -1,12 +1,5 @@
 import { exec } from 'child_process';
-import { Package } from './types';
-
-interface Dependencies {
-  [name: string]: {
-    version: string;
-    dependencies?: Dependencies;
-  };
-}
+import { Dependencies, Package } from './types';
 
 const getKey = ({ name, version }: Package) => `${name}_${version}`;
 
@@ -32,16 +25,20 @@ function getPackages(dependencies: Dependencies): Package[] {
   return Array.from(pkgs.values());
 }
 
-export default function readPackages(projectDir: string): Promise<Package[]> {
+// eslint-disable-next-line no-unused-vars
+export default function readPackages(projectDir: string, errorLogger?: (error: unknown) => void): Promise<Package[]> {
   return new Promise((resolve, reject) => {
     exec('npm list --json', { cwd: projectDir, encoding: 'utf8' }, (error, stdout) => {
       if (error) {
-        reject(error);
-      } else {
-        const { dependencies } = JSON.parse(stdout) as { dependencies: Dependencies };
-        const packages = getPackages(dependencies);
-        resolve(packages);
+        if (!errorLogger) {
+          reject(error);
+          return;
+        }
+        errorLogger(error.message);
       }
+      const { dependencies } = JSON.parse(stdout) as { dependencies: Dependencies };
+      const packages = getPackages(dependencies);
+      resolve(packages);
     });
   });
 }

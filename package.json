@@ -7,7 +7,7 @@
     "packages-whats-new": "./dist/index.js"
   },
   "scripts": {
-    "start": "ts-node --project ./tsconfig.json ./src/index.ts --interval 1y --to 2022-02-24 --compact",
+    "start": "ts-node --project ./tsconfig.json ./src/index.ts -d \"C:\\dev\\zp-front\" --to 2022-02-24",
     "build": "tsc --project ./tsconfig.json",
     "test": "test",
     "prettier": "prettier --write \"./src/{,!(node_modules|dist|build|coverage)/**/}*.{js,ts,json}\"",
