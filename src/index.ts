@@ -11,6 +11,7 @@ import readPackages from './readPackages';
 import getLatestVersion from './getLatestVersion';
 import { Args, Package, PackageInfo } from './types';
 import parseDate from './parseDate';
+import prettyPrint from './prettyPrint';
 
 const logger = console;
 
@@ -101,7 +102,7 @@ async function bootstrap() {
   logger.log(chalk.magenta('Collecting packages information...'));
   const results = await collect(pkgs);
 
-  logger.table(results.filter(x => x.version !== x.latestVersion));
+  prettyPrint(results.filter(x => x.version !== x.latestVersion));
 }
 
 bootstrap()
