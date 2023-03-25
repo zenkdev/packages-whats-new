@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@supercharge/promise-pool": "^2.0.0",
-    "chalk": "4.1.2",
+    "chalk": "5.2.0",
     "clear": "^0.1.0",
     "cli-progress": "^3.9.0",
     "figlet": "^1.5.0",
